@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import GraphCanvas from '@/components/GraphCanvas';
 import ControlPanel from '@/components/ControlPanel';
@@ -14,6 +15,24 @@ const Index = () => {
   const [pathResult, setPathResult] = useState(null);
   const [animationSpeed, setAnimationSpeed] = useState(5);
   const [isAnimating, setIsAnimating] = useState(false);
+  
+  // Grid mode state
+  const [isGridMode, setIsGridMode] = useState(false);
+  const [gridSize, setGridSize] = useState(15);  // Default grid size
+  const cellSize = 30;  // Size of each grid cell in pixels
+  
+  // Initialize grid when grid mode is enabled
+  useEffect(() => {
+    if (isGridMode) {
+      const newGraph = new Graph();
+      newGraph.initGrid(gridSize, cellSize);
+      setGraph(newGraph);
+      setPathResult(null);
+    } else {
+      setGraph(new Graph());
+      setPathResult(null);
+    }
+  }, [isGridMode, gridSize]);
 
   // Handle adding a node to the graph
   const handleNodeAdd = useCallback((x, y) => {
@@ -35,6 +54,27 @@ const Index = () => {
       const fromLabel = newGraph.nodes[fromId].label;
       const toLabel = newGraph.nodes[toId].label;
       toast.success(`Edge ${fromLabel}-${toLabel} added with weight ${weight}`);
+    }
+  }, [graph]);
+  
+  // Handle updating a grid cell (for grid mode)
+  const handleCellUpdate = useCallback((row, col, cellType) => {
+    const newGraph = new Graph();
+    Object.assign(newGraph, graph); // Create a copy
+    
+    if (newGraph.setCellType(row, col, cellType)) {
+      setGraph(newGraph);
+      
+      // Show appropriate toast based on cell type
+      if (cellType === -1) {
+        toast.info(`Added obstacle at position (${row}, ${col})`);
+      } else if (cellType === 0) {
+        toast.info(`Cleared cell at position (${row}, ${col})`);
+      } else if (cellType === 1) {
+        toast.info(`Added road at position (${row}, ${col})`);
+      } else {
+        toast.info(`Added traffic weight ${cellType} at position (${row}, ${col})`);
+      }
     }
   }, [graph]);
 
@@ -81,10 +121,16 @@ const Index = () => {
 
   // Reset the graph to empty state
   const resetGraph = useCallback(() => {
-    setGraph(new Graph());
+    if (isGridMode) {
+      const newGraph = new Graph();
+      newGraph.initGrid(gridSize, cellSize);
+      setGraph(newGraph);
+    } else {
+      setGraph(new Graph());
+    }
     setSelectedNodes([]);
     setPathResult(null);
-  }, []);
+  }, [isGridMode, gridSize, cellSize]);
 
   return (
     <div className="min-h-screen p-4 bg-gray-50">
@@ -107,13 +153,17 @@ const Index = () => {
               setAlgorithm={setAlgorithm}
               animationSpeed={animationSpeed}
               setAnimationSpeed={setAnimationSpeed}
+              isGridMode={isGridMode}
+              setIsGridMode={setIsGridMode}
+              gridSize={gridSize}
+              setGridSize={setGridSize}
             />
           </div>
           
           {/* Right panel - Graph visualization */}
           <div className="w-full md:w-2/3">
             <Card className="overflow-hidden">
-              <div className="h-[600px]">
+              <div className="h-[600px] flex items-center justify-center">
                 <GraphCanvas
                   graph={graph}
                   mode={mode}
@@ -125,6 +175,10 @@ const Index = () => {
                   animationSpeed={animationSpeed}
                   isAnimating={isAnimating}
                   setIsAnimating={setIsAnimating}
+                  isGridMode={isGridMode}
+                  gridSize={gridSize}
+                  cellSize={cellSize}
+                  onCellUpdate={handleCellUpdate}
                 />
               </div>
             </Card>

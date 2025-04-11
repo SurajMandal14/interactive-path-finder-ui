@@ -6,8 +6,17 @@ export function euclideanDistance(node1, node2) {
   return Math.sqrt(Math.pow(node2.x - node1.x, 2) + Math.pow(node2.y - node1.y, 2));
 }
 
+// Calculate Manhattan distance between two grid cells
+export function manhattanDistance(cell1, cell2) {
+  return Math.abs(cell1.row - cell2.row) + Math.abs(cell1.col - cell2.col);
+}
+
 // Implementation of Dijkstra's algorithm
 export function dijkstra(graph, startNodeId, endNodeId) {
+  if (graph.isGridMode) {
+    return dijkstraGrid(graph, startNodeId, endNodeId);
+  }
+  
   const distances = {};
   const previous = {};
   const unvisited = new Set();
@@ -74,8 +83,96 @@ export function dijkstra(graph, startNodeId, endNodeId) {
   };
 }
 
+// Dijkstra for grid-based graph
+function dijkstraGrid(graph, startCell, endCell) {
+  const distances = {};
+  const previous = {};
+  const unvisited = new Set();
+  const visited = new Set();
+  
+  // Parse start and end cells
+  const [startRow, startCol] = startCell.split(',').map(Number);
+  const [endRow, endCol] = endCell.split(',').map(Number);
+  
+  // Initialize for all cells
+  for (let row = 0; row < graph.gridSize; row++) {
+    for (let col = 0; col < graph.gridSize; col++) {
+      const cellKey = `${row},${col}`;
+      const isStart = row === startRow && col === startCol;
+      
+      // Skip obstacles
+      if (graph.grid[row][col] === -1) continue;
+      
+      distances[cellKey] = isStart ? 0 : Infinity;
+      previous[cellKey] = null;
+      unvisited.add(cellKey);
+    }
+  }
+  
+  while (unvisited.size > 0) {
+    // Find cell with minimum distance
+    let current = null;
+    let minDistance = Infinity;
+    
+    for (const cellKey of unvisited) {
+      if (distances[cellKey] < minDistance) {
+        minDistance = distances[cellKey];
+        current = cellKey;
+      }
+    }
+    
+    // If no path found or reached destination
+    if (current === null || current === endCell) break;
+    
+    // Mark as visited
+    unvisited.delete(current);
+    visited.add(current);
+    
+    // Get current cell coordinates
+    const [currentRow, currentCol] = current.split(',').map(Number);
+    
+    // Check all neighbors
+    const neighbors = graph.getGridNeighbors(currentRow, currentCol);
+    
+    for (const neighbor of neighbors) {
+      const { row, col, weight } = neighbor;
+      const neighborKey = `${row},${col}`;
+      
+      if (visited.has(neighborKey)) continue;
+      
+      // Calculate new distance
+      const newDistance = distances[current] + weight;
+      
+      // Update if better path found
+      if (newDistance < distances[neighborKey]) {
+        distances[neighborKey] = newDistance;
+        previous[neighborKey] = current;
+      }
+    }
+  }
+  
+  // Reconstruct path
+  const path = [];
+  let current = endCell;
+  
+  while (current !== null) {
+    path.unshift(current);
+    current = previous[current];
+  }
+  
+  return {
+    path: path.length > 1 ? path : [],
+    distance: distances[endCell] || Infinity,
+    visited: Array.from(visited)
+  };
+}
+
 // Implementation of A* algorithm
 export function aStar(graph, startNodeId, endNodeId) {
+  if (graph.isGridMode) {
+    return aStarGrid(graph, startNodeId, endNodeId);
+  }
+  
   const openSet = new Set([startNodeId]);
   const closedSet = new Set();
   
@@ -161,9 +258,122 @@ export function aStar(graph, startNodeId, endNodeId) {
   };
 }
 
+// A* for grid-based graph
+function aStarGrid(graph, startCell, endCell) {
+  const openSet = new Set([startCell]);
+  const closedSet = new Set();
+  
+  const gScore = {}; // Cost from start
+  const fScore = {}; // Estimated total cost
+  const previous = {};
+  
+  // Parse start and end cells
+  const [startRow, startCol] = startCell.split(',').map(Number);
+  const [endRow, endCol] = endCell.split(',').map(Number);
+  
+  // End position as object for heuristic calculation
+  const endPosition = { row: endRow, col: endCol };
+  
+  // Initialize for all cells
+  for (let row = 0; row < graph.gridSize; row++) {
+    for (let col = 0; col < graph.gridSize; col++) {
+      const cellKey = `${row},${col}`;
+      const isStart = row === startRow && col === startCol;
+      
+      // Skip obstacles
+      if (graph.grid[row][col] === -1) continue;
+      
+      gScore[cellKey] = isStart ? 0 : Infinity;
+      
+      // For start cell, calculate heuristic
+      if (isStart) {
+        fScore[cellKey] = gridHeuristic({ row, col }, endPosition);
+      } else {
+        fScore[cellKey] = Infinity;
+      }
+      
+      previous[cellKey] = null;
+    }
+  }
+  
+  while (openSet.size > 0) {
+    // Find cell with minimum fScore
+    let current = null;
+    let minFScore = Infinity;
+    
+    for (const cellKey of openSet) {
+      if (fScore[cellKey] < minFScore) {
+        minFScore = fScore[cellKey];
+        current = cellKey;
+      }
+    }
+    
+    // If reached destination
+    if (current === endCell) {
+      // Reconstruct path
+      const path = [];
+      let temp = current;
+      
+      while (temp !== null) {
+        path.unshift(temp);
+        temp = previous[temp];
+      }
+      
+      return {
+        path,
+        distance: gScore[endCell],
+        visited: Array.from(closedSet)
+      };
+    }
+    
+    // Move from open to closed
+    openSet.delete(current);
+    closedSet.add(current);
+    
+    // Process neighbors
+    const [currentRow, currentCol] = current.split(',').map(Number);
+    const neighbors = graph.getGridNeighbors(currentRow, currentCol);
+    
+    for (const neighbor of neighbors) {
+      const { row, col, weight } = neighbor;
+      const neighborKey = `${row},${col}`;
+      
+      if (closedSet.has(neighborKey)) continue;
+      
+      // Calculate tentative gScore
+      const tentativeGScore = gScore[current] + weight;
+      
+      // If new path is better
+      if (tentativeGScore < gScore[neighborKey]) {
+        // Update neighbor
+        previous[neighborKey] = current;
+        gScore[neighborKey] = tentativeGScore;
+        fScore[neighborKey] = gScore[neighborKey] + gridHeuristic({ row, col }, endPosition);
+        
+        // Add to open set if not already there
+        if (!openSet.has(neighborKey)) {
+          openSet.add(neighborKey);
+        }
+      }
+    }
+  }
+  
+  // No path found
+  return {
+    path: [],
+    distance: Infinity,
+    visited: Array.from(closedSet)
+  };
+}
+
 // Heuristic function for A* (Euclidean distance)
 function heuristic(a, b) {
   return euclideanDistance(a, b);
+}
+
+// Heuristic for grid-based A* (Manhattan distance)
+function gridHeuristic(cell1, cell2) {
+  return manhattanDistance(cell1, cell2);
 }
 
 // Helper for generating unique IDs
