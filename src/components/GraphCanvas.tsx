@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -375,13 +374,18 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
   };
   
   const renderGrid = () => {
-    const { grid } = graph;
+    // Ensure grid is defined before attempting to render
+    if (!graph.grid || graph.grid.length === 0) {
+      return null;
+    }
+    
     const gridContent = [];
     
     // Render grid cells
     for (let row = 0; row < gridSize; row++) {
       for (let col = 0; col < gridSize; col++) {
-        const cellType = grid[row][col];
+        // Safe access to cell type with fallback to 0
+        const cellType = graph.grid[row] && graph.grid[row][col] !== undefined ? graph.grid[row][col] : 0;
         const coords = graph.gridToCoord(row, col);
         
         // Cell background
@@ -560,7 +564,8 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
               autoFocus
               onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                 if (e.key === 'Enter') {
-                  handleEdgeWeightSubmit(Number((e.target as HTMLInputElement).value) || 1);
+                  const target = e.target as HTMLInputElement;
+                  handleEdgeWeightSubmit(Number(target.value) || 1);
                 } else if (e.key === 'Escape') {
                   handleEdgeWeightCancel();
                 }
@@ -569,7 +574,8 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
             <button
               className="bg-primary text-white px-2 py-1 rounded"
               onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                const input = (e.target as HTMLElement).parentNode?.querySelector('input') as HTMLInputElement;
+                const parentNode = (e.target as HTMLElement).parentNode as HTMLElement;
+                const input = parentNode.querySelector('input') as HTMLInputElement;
                 handleEdgeWeightSubmit(Number(input?.value) || 1);
               }}
             >
@@ -608,7 +614,8 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
               autoFocus
               onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                 if (e.key === 'Enter') {
-                  handleCellWeightSubmit(Number((e.target as HTMLInputElement).value) || 1);
+                  const target = e.target as HTMLInputElement;
+                  handleCellWeightSubmit(Number(target.value) || 1);
                 } else if (e.key === 'Escape') {
                   handleCellWeightCancel();
                 }
@@ -617,7 +624,8 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
             <button
               className="bg-primary text-white px-2 py-1 rounded"
               onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                const input = (e.target as HTMLElement).parentNode?.querySelector('input') as HTMLInputElement;
+                const parentNode = (e.target as HTMLElement).parentNode as HTMLElement;
+                const input = parentNode.querySelector('input') as HTMLInputElement;
                 handleCellWeightSubmit(Number(input?.value) || 1);
               }}
             >

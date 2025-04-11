@@ -38,11 +38,14 @@ class Graph {
     this.edges = {};  // `${fromId}-${toId}` -> {from, to, weight}
     this.nodeCounter = 0;
     
-    // Grid-specific properties
+    // Grid-specific properties - initialize with empty grid
     this.grid = [];
-    this.gridSize = 0;
-    this.cellSize = 0;
+    this.gridSize = 15; // default grid size
+    this.cellSize = 30; // default cell size
     this.isGridMode = false;
+    
+    // Initialize empty grid with default size
+    this.grid = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(0));
   }
 
   // Initialize grid with size and cell dimensions

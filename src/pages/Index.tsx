@@ -34,10 +34,16 @@ const Index = () => {
       newGraph.initGrid(gridSize, cellSize);
       setGraph(newGraph);
       setPathResult(null);
+      setSelectedNodes([]);
     } else {
-      setGraph(new Graph());
+      const newGraph = new Graph();
+      setGraph(newGraph);
       setPathResult(null);
+      setSelectedNodes([]);
     }
+    
+    // Reset animation and selection state when switching modes
+    setIsAnimating(false);
   }, [isGridMode, gridSize]);
 
   // Handle adding a node to the graph
@@ -68,6 +74,11 @@ const Index = () => {
     const newGraph = new Graph();
     Object.assign(newGraph, graph); // Create a copy
     
+    // Ensure grid exists before using it
+    if (!newGraph.grid) {
+      newGraph.initGrid(gridSize, cellSize);
+    }
+    
     if (newGraph.setCellType(row, col, cellType)) {
       setGraph(newGraph);
       
@@ -82,7 +93,7 @@ const Index = () => {
         toast.info(`Added traffic weight ${cellType} at position (${row}, ${col})`);
       }
     }
-  }, [graph]);
+  }, [graph, gridSize, cellSize]);
 
   // Handle selecting a node (for pathfinding)
   const handleNodeSelect = useCallback((nodeId: string) => {
@@ -108,20 +119,25 @@ const Index = () => {
     const [startId, endId] = selectedNodes;
     let result;
     
-    if (algorithm === 'dijkstra') {
-      result = dijkstra(graph, startId, endId);
-    } else {
-      result = aStar(graph, startId, endId);
+    try {
+      if (algorithm === 'dijkstra') {
+        result = dijkstra(graph, startId, endId);
+      } else {
+        result = aStar(graph, startId, endId);
+      }
+      
+      if (result.path.length === 0) {
+        toast.error('No path found between selected nodes');
+        return;
+      }
+      
+      // Start animation
+      setPathResult(result);
+      setIsAnimating(true);
+    } catch (error) {
+      console.error('Pathfinding error:', error);
+      toast.error('Error occurred during pathfinding. Please try again.');
     }
-    
-    if (result.path.length === 0) {
-      toast.error('No path found between selected nodes');
-      return;
-    }
-    
-    // Start animation
-    setPathResult(result);
-    setIsAnimating(true);
     
   }, [algorithm, graph, selectedNodes]);
 
@@ -136,6 +152,7 @@ const Index = () => {
     }
     setSelectedNodes([]);
     setPathResult(null);
+    setIsAnimating(false);
   }, [isGridMode, gridSize, cellSize]);
 
   return (
