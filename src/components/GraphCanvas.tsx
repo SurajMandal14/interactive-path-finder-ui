@@ -4,7 +4,43 @@ import { toast } from 'sonner';
 
 const NODE_RADIUS = 20;
 
-const GraphCanvas = ({ 
+interface Node {
+  id: string;
+  x: number;
+  y: number;
+  label: string;
+}
+
+interface Edge {
+  from: string;
+  to: string;
+  weight: number;
+}
+
+interface PathResult {
+  path: string[];
+  visited: string[];
+  distance: number;
+}
+
+interface GraphCanvasProps {
+  graph: any; 
+  mode: string;
+  onNodeAdd: (x: number, y: number) => void;
+  onEdgeAdd: (fromId: string, toId: string, weight: number) => void;
+  selectedNodes: string[];
+  onNodeSelect: (nodeId: string) => void;
+  pathResult: PathResult | null;
+  animationSpeed: number;
+  isAnimating: boolean;
+  setIsAnimating: (isAnimating: boolean) => void;
+  isGridMode: boolean;
+  gridSize: number;
+  cellSize: number;
+  onCellUpdate: (row: number, col: number, cellType: number) => void;
+}
+
+const GraphCanvas: React.FC<GraphCanvasProps> = ({ 
   graph, 
   mode, 
   onNodeAdd, 
@@ -20,11 +56,11 @@ const GraphCanvas = ({
   cellSize,
   onCellUpdate
 }) => {
-  const svgRef = useRef(null);
-  const [dragStartNode, setDragStartNode] = useState(null);
-  const [edgeWeightInput, setEdgeWeightInput] = useState({ visible: false, from: null, to: null, x: 0, y: 0 });
-  const [animationTimer, setAnimationTimer] = useState(null);
-  const [agentPosition, setAgentPosition] = useState(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [dragStartNode, setDragStartNode] = useState<string | null>(null);
+  const [edgeWeightInput, setEdgeWeightInput] = useState({ visible: false, from: null as string | null, to: null as string | null, x: 0, y: 0 });
+  const [animationTimer, setAnimationTimer] = useState<NodeJS.Timeout | null>(null);
+  const [agentPosition, setAgentPosition] = useState<{row: number, col: number} | null>(null);
   const [cellWeightInput, setCellWeightInput] = useState({ visible: false, row: -1, col: -1, x: 0, y: 0 });
   
   // Current animation state
@@ -98,7 +134,7 @@ const GraphCanvas = ({
     };
   }, [animationState, pathResult, isAnimating, animationSpeed, setIsAnimating, isGridMode]);
   
-  const handleCanvasClick = (e) => {
+  const handleCanvasClick = (e: React.MouseEvent) => {
     if (isGridMode) {
       handleGridClick(e);
       return;
@@ -107,12 +143,14 @@ const GraphCanvas = ({
     if (mode !== 'add-node') return;
     
     // Get coordinates relative to SVG
-    const svgRect = svgRef.current.getBoundingClientRect();
+    const svgRect = svgRef.current?.getBoundingClientRect();
+    if (!svgRect) return;
+    
     const x = e.clientX - svgRect.left;
     const y = e.clientY - svgRect.top;
     
     // Check if clicked on empty space
-    const clickedOnNode = Object.values(graph.nodes).some(node => {
+    const clickedOnNode = Object.values(graph.nodes).some((node: Node) => {
       const dx = node.x - x;
       const dy = node.y - y;
       return Math.sqrt(dx * dx + dy * dy) <= NODE_RADIUS;
@@ -124,9 +162,11 @@ const GraphCanvas = ({
   };
   
   // Grid mode click handler
-  const handleGridClick = (e) => {
+  const handleGridClick = (e: React.MouseEvent) => {
     // Get coordinates relative to SVG
-    const svgRect = svgRef.current.getBoundingClientRect();
+    const svgRect = svgRef.current?.getBoundingClientRect();
+    if (!svgRect) return;
+    
     const x = e.clientX - svgRect.left;
     const y = e.clientY - svgRect.top;
     
@@ -148,7 +188,7 @@ const GraphCanvas = ({
     }
   };
   
-  const promptForCellWeight = (row, col, x, y) => {
+  const promptForCellWeight = (row: number, col: number, x: number, y: number) => {
     setCellWeightInput({
       visible: true,
       row,
@@ -158,7 +198,7 @@ const GraphCanvas = ({
     });
   };
   
-  const handleCellWeightSubmit = (weight) => {
+  const handleCellWeightSubmit = (weight: number) => {
     const { row, col } = cellWeightInput;
     onCellUpdate(row, col, weight);
     setCellWeightInput({ visible: false, row: -1, col: -1, x: 0, y: 0 });
@@ -168,7 +208,7 @@ const GraphCanvas = ({
     setCellWeightInput({ visible: false, row: -1, col: -1, x: 0, y: 0 });
   };
   
-  const handleNodeClick = (e, nodeId) => {
+  const handleNodeClick = (e: React.MouseEvent, nodeId: string) => {
     e.stopPropagation();
     
     if (mode === 'add-edge') {
@@ -185,7 +225,7 @@ const GraphCanvas = ({
     }
   };
   
-  const promptForEdgeWeight = (fromId, toId) => {
+  const promptForEdgeWeight = (fromId: string, toId: string) => {
     // Position the weight input near the middle of the edge
     const fromNode = graph.nodes[fromId];
     const toNode = graph.nodes[toId];
@@ -202,9 +242,11 @@ const GraphCanvas = ({
     });
   };
   
-  const handleEdgeWeightSubmit = (weight) => {
+  const handleEdgeWeightSubmit = (weight: number) => {
     const { from, to } = edgeWeightInput;
-    onEdgeAdd(from, to, weight);
+    if (from && to) {
+      onEdgeAdd(from, to, weight);
+    }
     setEdgeWeightInput({ visible: false, from: null, to: null, x: 0, y: 0 });
   };
   
@@ -213,7 +255,7 @@ const GraphCanvas = ({
   };
 
   // GRID RENDERING FUNCTIONS
-  const getCellColor = (row, col, cellType) => {
+  const getCellColor = (row: number, col: number, cellType: number) => {
     // Handle start/end positions
     if (selectedNodes.length > 0 && selectedNodes[0] === `${row},${col}`) {
       return '#33cc33'; // Start position - green
@@ -251,7 +293,7 @@ const GraphCanvas = ({
     }
   };
   
-  const getEdgeClass = (edge) => {
+  const getEdgeClass = (edge: Edge) => {
     if (!pathResult || !isAnimating) return 'edge';
     
     const { path } = pathResult;
@@ -268,7 +310,7 @@ const GraphCanvas = ({
     return 'edge';
   };
   
-  const getNodeClass = (nodeId) => {
+  const getNodeClass = (nodeId: string) => {
     if (!pathResult || !isAnimating) return 'node';
     
     const { visited, path } = pathResult;
@@ -298,7 +340,7 @@ const GraphCanvas = ({
     return 'node';
   };
   
-  const getNodeFill = (nodeId) => {
+  const getNodeFill = (nodeId: string) => {
     if (selectedNodes.includes(nodeId)) {
       return '#ff3333';
     }
@@ -422,7 +464,7 @@ const GraphCanvas = ({
           // Graph-based rendering
           <>
             {/* Edges */}
-            {Object.values(graph.edges).map((edge, index) => {
+            {Object.values(graph.edges).map((edge: Edge, index: number) => {
               const fromNode = graph.nodes[edge.from];
               const toNode = graph.nodes[edge.to];
               
@@ -447,7 +489,6 @@ const GraphCanvas = ({
                     y={midY - 5}
                     dy="-0.5em"
                     fill="#666"
-                    backgroundColor="#fff"
                   >
                     {edge.weight}
                   </text>
@@ -456,7 +497,7 @@ const GraphCanvas = ({
             })}
             
             {/* Nodes */}
-            {Object.values(graph.nodes).map(node => (
+            {Object.values(graph.nodes).map((node: Node) => (
               <g key={node.id} transform={`translate(${node.x}, ${node.y})`}>
                 <circle
                   className={getNodeClass(node.id)}
@@ -517,9 +558,9 @@ const GraphCanvas = ({
               min="1"
               defaultValue={1}
               autoFocus
-              onKeyDown={(e) => {
+              onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                 if (e.key === 'Enter') {
-                  handleEdgeWeightSubmit(Number(e.target.value) || 1);
+                  handleEdgeWeightSubmit(Number((e.target as HTMLInputElement).value) || 1);
                 } else if (e.key === 'Escape') {
                   handleEdgeWeightCancel();
                 }
@@ -527,9 +568,9 @@ const GraphCanvas = ({
             />
             <button
               className="bg-primary text-white px-2 py-1 rounded"
-              onClick={(e) => {
-                const input = e.target.parentNode.querySelector('input');
-                handleEdgeWeightSubmit(Number(input.value) || 1);
+              onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                const input = (e.target as HTMLElement).parentNode?.querySelector('input') as HTMLInputElement;
+                handleEdgeWeightSubmit(Number(input?.value) || 1);
               }}
             >
               OK
@@ -565,9 +606,9 @@ const GraphCanvas = ({
               max="10"
               defaultValue={2}
               autoFocus
-              onKeyDown={(e) => {
+              onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                 if (e.key === 'Enter') {
-                  handleCellWeightSubmit(Number(e.target.value) || 1);
+                  handleCellWeightSubmit(Number((e.target as HTMLInputElement).value) || 1);
                 } else if (e.key === 'Escape') {
                   handleCellWeightCancel();
                 }
@@ -575,9 +616,9 @@ const GraphCanvas = ({
             />
             <button
               className="bg-primary text-white px-2 py-1 rounded"
-              onClick={(e) => {
-                const input = e.target.parentNode.querySelector('input');
-                handleCellWeightSubmit(Number(input.value) || 1);
+              onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                const input = (e.target as HTMLElement).parentNode?.querySelector('input') as HTMLInputElement;
+                handleCellWeightSubmit(Number(input?.value) || 1);
               }}
             >
               OK

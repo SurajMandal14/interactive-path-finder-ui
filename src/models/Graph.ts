@@ -1,7 +1,38 @@
 
 import { generateId } from '../utils/graphUtils';
 
+interface Node {
+  id: string;
+  x: number;
+  y: number;
+  label: string;
+}
+
+interface Edge {
+  from: string;
+  to: string;
+  weight: number;
+}
+
+type Edges = {
+  [key: string]: Edge;
+}
+
+type Nodes = {
+  [key: string]: Node;
+}
+
 class Graph {
+  nodes: Nodes;
+  edges: Edges;
+  nodeCounter: number;
+  
+  // Grid-specific properties
+  grid: number[][];
+  gridSize: number;
+  cellSize: number;
+  isGridMode: boolean;
+
   constructor() {
     this.nodes = {};  // nodeId -> {id, x, y, label}
     this.edges = {};  // `${fromId}-${toId}` -> {from, to, weight}
@@ -15,13 +46,13 @@ class Graph {
   }
 
   // Initialize grid with size and cell dimensions
-  initGrid(gridSize, cellSize) {
+  initGrid(gridSize: number, cellSize: number) {
     this.gridSize = gridSize;
     this.cellSize = cellSize;
     this.isGridMode = true;
     
     // Create empty grid (0 = empty, 1 = road, -1 = obstacle, >1 = weighted road)
-    this.grid = Array(gridSize).fill().map(() => Array(gridSize).fill(0));
+    this.grid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(0));
     
     // Reset existing graph
     this.nodes = {};
@@ -30,7 +61,7 @@ class Graph {
   }
   
   // Set a specific grid cell type
-  setCellType(row, col, type) {
+  setCellType(row: number, col: number, type: number): boolean {
     if (row >= 0 && row < this.gridSize && col >= 0 && col < this.gridSize) {
       this.grid[row][col] = type;
       return true;
@@ -39,7 +70,7 @@ class Graph {
   }
   
   // Get a specific grid cell type
-  getCellType(row, col) {
+  getCellType(row: number, col: number): number | null {
     if (row >= 0 && row < this.gridSize && col >= 0 && col < this.gridSize) {
       return this.grid[row][col];
     }
@@ -47,7 +78,7 @@ class Graph {
   }
   
   // Convert grid position to canvas coordinates
-  gridToCoord(row, col) {
+  gridToCoord(row: number, col: number) {
     return {
       x: col * this.cellSize + this.cellSize / 2,
       y: row * this.cellSize + this.cellSize / 2
@@ -55,7 +86,7 @@ class Graph {
   }
   
   // Convert canvas coordinates to grid position
-  coordToGrid(x, y) {
+  coordToGrid(x: number, y: number) {
     return {
       row: Math.floor(y / this.cellSize),
       col: Math.floor(x / this.cellSize)
@@ -63,7 +94,7 @@ class Graph {
   }
 
   // Add a node to the graph
-  addNode(x, y) {
+  addNode(x: number, y: number): string {
     const nextLabel = String.fromCharCode(65 + this.nodeCounter); // A, B, C...
     const id = generateId();
     
@@ -79,7 +110,7 @@ class Graph {
   }
   
   // Remove a node and all its connected edges
-  removeNode(nodeId) {
+  removeNode(nodeId: string): void {
     if (!this.nodes[nodeId]) return;
     
     // Remove all edges connected to this node
@@ -95,8 +126,8 @@ class Graph {
   }
   
   // Add an edge between two nodes
-  addEdge(fromId, toId, weight = 1) {
-    if (!this.nodes[fromId] || !this.nodes[fromId]) return null;
+  addEdge(fromId: string, toId: string, weight = 1): Edge | null {
+    if (!this.nodes[fromId] || !this.nodes[toId]) return null;
     
     const edgeKey1 = `${fromId}-${toId}`;
     const edgeKey2 = `${toId}-${fromId}`;
@@ -125,7 +156,7 @@ class Graph {
   }
   
   // Update the weight of an existing edge
-  updateEdgeWeight(fromId, toId, weight) {
+  updateEdgeWeight(fromId: string, toId: string, weight: number): void {
     const edgeKey1 = `${fromId}-${toId}`;
     const edgeKey2 = `${toId}-${fromId}`;
     
@@ -139,7 +170,7 @@ class Graph {
   }
   
   // Remove an edge between two nodes
-  removeEdge(fromId, toId) {
+  removeEdge(fromId: string, toId: string): void {
     const edgeKey1 = `${fromId}-${toId}`;
     const edgeKey2 = `${toId}-${fromId}`;
     
@@ -148,8 +179,8 @@ class Graph {
   }
   
   // Get all neighbors of a node
-  getNeighbors(nodeId) {
-    const neighbors = [];
+  getNeighbors(nodeId: string): string[] {
+    const neighbors: string[] = [];
     
     Object.values(this.edges).forEach(edge => {
       if (edge.from === nodeId) {
@@ -161,8 +192,8 @@ class Graph {
   }
   
   // Get grid neighbors for pathfinding (for grid mode)
-  getGridNeighbors(row, col) {
-    const neighbors = [];
+  getGridNeighbors(row: number, col: number): {row: number, col: number, weight: number}[] {
+    const neighbors: {row: number, col: number, weight: number}[] = [];
     const directions = [
       [-1, 0],  // Up
       [1, 0],   // Down
@@ -188,7 +219,7 @@ class Graph {
   }
   
   // Get an edge between two nodes
-  getEdge(fromId, toId) {
+  getEdge(fromId: string, toId: string): Edge | undefined {
     const edgeKey = `${fromId}-${toId}`;
     return this.edges[edgeKey];
   }

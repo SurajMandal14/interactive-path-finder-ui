@@ -7,12 +7,18 @@ import Graph from '@/models/Graph';
 import { dijkstra, aStar } from '@/utils/graphUtils';
 import { toast } from 'sonner';
 
+interface PathResult {
+  path: string[];
+  visited: string[];
+  distance: number;
+}
+
 const Index = () => {
-  const [graph, setGraph] = useState(new Graph());
+  const [graph, setGraph] = useState<Graph>(new Graph());
   const [mode, setMode] = useState('add-node');
-  const [selectedNodes, setSelectedNodes] = useState([]);
+  const [selectedNodes, setSelectedNodes] = useState<string[]>([]);
   const [algorithm, setAlgorithm] = useState('astar');
-  const [pathResult, setPathResult] = useState(null);
+  const [pathResult, setPathResult] = useState<PathResult | null>(null);
   const [animationSpeed, setAnimationSpeed] = useState(5);
   const [isAnimating, setIsAnimating] = useState(false);
   
@@ -35,7 +41,7 @@ const Index = () => {
   }, [isGridMode, gridSize]);
 
   // Handle adding a node to the graph
-  const handleNodeAdd = useCallback((x, y) => {
+  const handleNodeAdd = useCallback((x: number, y: number) => {
     const newGraph = new Graph();
     Object.assign(newGraph, graph); // Create a copy
     const id = newGraph.addNode(x, y);
@@ -44,7 +50,7 @@ const Index = () => {
   }, [graph]);
 
   // Handle adding an edge to the graph
-  const handleEdgeAdd = useCallback((fromId, toId, weight) => {
+  const handleEdgeAdd = useCallback((fromId: string, toId: string, weight: number) => {
     const newGraph = new Graph();
     Object.assign(newGraph, graph); // Create a copy
     const edge = newGraph.addEdge(fromId, toId, Number(weight));
@@ -58,7 +64,7 @@ const Index = () => {
   }, [graph]);
   
   // Handle updating a grid cell (for grid mode)
-  const handleCellUpdate = useCallback((row, col, cellType) => {
+  const handleCellUpdate = useCallback((row: number, col: number, cellType: number) => {
     const newGraph = new Graph();
     Object.assign(newGraph, graph); // Create a copy
     
@@ -79,7 +85,7 @@ const Index = () => {
   }, [graph]);
 
   // Handle selecting a node (for pathfinding)
-  const handleNodeSelect = useCallback((nodeId) => {
+  const handleNodeSelect = useCallback((nodeId: string) => {
     setSelectedNodes(prev => {
       // If node already selected, remove it
       if (prev.includes(nodeId)) {
