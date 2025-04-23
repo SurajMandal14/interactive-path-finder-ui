@@ -32,6 +32,11 @@ class Graph {
   gridSize: number;
   cellSize: number;
   isGridMode: boolean;
+  
+  // Path highlighting properties
+  finalPath: string[];
+  visitedCells: string[];
+  isPathHighlighted: boolean;
 
   constructor() {
     this.nodes = {};  // nodeId -> {id, x, y, label}
@@ -46,6 +51,11 @@ class Graph {
     
     // Initialize empty grid with default size
     this.grid = Array(this.gridSize).fill(null).map(() => Array(this.gridSize).fill(0));
+    
+    // Initialize path highlighting properties
+    this.finalPath = [];
+    this.visitedCells = [];
+    this.isPathHighlighted = false;
   }
 
   // Initialize grid with size and cell dimensions
@@ -61,6 +71,11 @@ class Graph {
     this.nodes = {};
     this.edges = {};
     this.nodeCounter = 0;
+    
+    // Reset path highlighting
+    this.finalPath = [];
+    this.visitedCells = [];
+    this.isPathHighlighted = false;
   }
   
   // Set a specific grid cell type
@@ -78,6 +93,36 @@ class Graph {
       return this.grid[row][col];
     }
     return null;
+  }
+  
+  // Set the final path for highlighting
+  setFinalPath(path: string[]): void {
+    this.finalPath = path;
+    this.isPathHighlighted = true;
+  }
+  
+  // Set the visited cells for visualization
+  setVisitedCells(visited: string[]): void {
+    this.visitedCells = visited;
+  }
+  
+  // Clear path highlighting
+  clearPathHighlighting(): void {
+    this.finalPath = [];
+    this.visitedCells = [];
+    this.isPathHighlighted = false;
+  }
+  
+  // Check if a cell is part of the final path
+  isInFinalPath(row: number, col: number): boolean {
+    const cellId = `${row},${col}`;
+    return this.isPathHighlighted && this.finalPath.includes(cellId);
+  }
+  
+  // Check if a cell was visited during pathfinding
+  isVisitedCell(row: number, col: number): boolean {
+    const cellId = `${row},${col}`;
+    return this.visitedCells.includes(cellId);
   }
   
   // Convert grid position to canvas coordinates
@@ -211,9 +256,9 @@ class Graph {
       // Check if within grid bounds
       if (r >= 0 && r < this.gridSize && c >= 0 && c < this.gridSize) {
         const cellType = this.grid[r][c];
-        // Only add if not an obstacle (-1)
-        if (cellType !== -1) {
-          neighbors.push({row: r, col: c, weight: cellType || 1});  // Default to 1 if cellType is 0
+        // Only add if it's a road (type 1 or greater)
+        if (cellType >= 1) {
+          neighbors.push({row: r, col: c, weight: cellType});
         }
       }
     }
@@ -233,13 +278,19 @@ class Graph {
       return {
         grid: this.grid,
         gridSize: this.gridSize,
-        cellSize: this.cellSize
+        cellSize: this.cellSize,
+        finalPath: this.finalPath,
+        visitedCells: this.visitedCells,
+        isPathHighlighted: this.isPathHighlighted
       };
     }
     
     return {
       nodes: Object.values(this.nodes),
-      edges: Object.values(this.edges)
+      edges: Object.values(this.edges),
+      finalPath: this.finalPath,
+      visitedCells: this.visitedCells,
+      isPathHighlighted: this.isPathHighlighted
     };
   }
 }

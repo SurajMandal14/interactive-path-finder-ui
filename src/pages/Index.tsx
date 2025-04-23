@@ -109,6 +109,14 @@ const Index = () => {
     });
   }, []);
 
+  // Add a new state for path analysis
+  const [pathAnalysis, setPathAnalysis] = useState({
+    totalCost: 0,
+    pathLength: 0,
+    coordinates: [],
+    visitedCount: 0
+  });
+  
   // Run the selected pathfinding algorithm
   const runPathfinding = useCallback(() => {
     if (selectedNodes.length !== 2) {
@@ -131,15 +139,59 @@ const Index = () => {
         return;
       }
       
+      // Store the path and visited cells in the graph for highlighting
+      const newGraph = new Graph();
+      Object.assign(newGraph, graph); // Create a copy
+      newGraph.setFinalPath(result.path);
+      newGraph.setVisitedCells(result.visited);
+      setGraph(newGraph);
+      
       // Start animation
       setPathResult(result);
       setIsAnimating(true);
+      
+      // Update path analysis
+      setPathAnalysis({
+        totalCost: result.distance,
+        pathLength: result.path.length,
+        coordinates: result.path,
+        visitedCount: result.visited.length
+      });
+      
     } catch (error) {
       console.error('Pathfinding error:', error);
       toast.error('Error occurred during pathfinding. Please try again.');
     }
     
   }, [algorithm, graph, selectedNodes]);
+
+  // Generate a random grid with roads and obstacles
+  const generateRandomGrid = useCallback(() => {
+    const newGraph = new Graph();
+    newGraph.initGrid(gridSize, cellSize);
+    
+    // For each cell in the grid
+    for (let row = 0; row < gridSize; row++) {
+      for (let col = 0; col < gridSize; col++) {
+        // Generate a random number between 0 and 1
+        const random = Math.random();
+        
+        // 70% chance for road, 30% chance for obstacle
+        if (random < 0.7) {
+          newGraph.setCellType(row, col, 1); // Road
+        } else {
+          newGraph.setCellType(row, col, -1); // Obstacle
+        }
+      }
+    }
+    
+    setGraph(newGraph);
+    setSelectedNodes([]);
+    setPathResult(null);
+    setIsAnimating(false);
+    
+    toast.success('Random grid generated with roads and obstacles');
+  }, [gridSize, cellSize]);
 
   // Reset the graph to empty state
   const resetGraph = useCallback(() => {
@@ -180,6 +232,7 @@ const Index = () => {
               setIsGridMode={setIsGridMode}
               gridSize={gridSize}
               setGridSize={setGridSize}
+              generateRandomGrid={generateRandomGrid}
             />
           </div>
           
@@ -205,6 +258,42 @@ const Index = () => {
                 />
               </div>
             </Card>
+            
+            {/* Path Analysis Section */}
+            {pathResult && pathResult.path.length > 0 && (
+              <Card className="mt-4 p-4">
+                <h3 className="text-lg font-semibold mb-2">Path Analysis</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Total Cost</p>
+                    <p className="font-medium">{pathAnalysis.totalCost.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Path Length</p>
+                    <p className="font-medium">{pathAnalysis.pathLength} cells</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Cells Visited</p>
+                    <p className="font-medium">{pathAnalysis.visitedCount} cells</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Algorithm</p>
+                    <p className="font-medium">{algorithm === 'astar' ? 'A* Search' : 'Dijkstra'}</p>
+                  </div>
+                </div>
+                
+                <div className="mt-4">
+                  <p className="text-sm text-gray-500 mb-1">Path Coordinates</p>
+                  <div className="bg-gray-100 p-2 rounded-md text-xs max-h-32 overflow-y-auto">
+                    {pathAnalysis.coordinates.map((coord, index) => (
+                      <div key={index} className="mb-1">
+                        <span className="font-medium">Step {index + 1}:</span> {coord}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            )}
           </div>
         </div>
       </div>
