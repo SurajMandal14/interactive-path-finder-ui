@@ -1,73 +1,118 @@
-# Welcome to your Lovable project
+# Interactive Route Planning
 
-## Project info
+An interactive web application for visualizing and planning routes on a map interface. This tool allows users to find optimal paths between locations using various pathfinding algorithms.
 
-**URL**: https://lovable.dev/projects/6301c625-c21e-42d9-8508-d2bd2f8e0752
+## Features
 
-## How can I edit this code?
+- Interactive map interface for route planning
+- Multiple pathfinding algorithms (Dijkstra, A*, etc.)
+- Real-time visualization of the pathfinding process
+- Customizable map settings and obstacles
+- Responsive design for desktop and mobile devices
 
-There are several ways of editing your application.
+## Demo
 
-**Use Lovable**
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/6301c625-c21e-42d9-8508-d2bd2f8e0752) and start prompting.
+## Technologies Used
 
-Changes made via Lovable will be committed automatically to this repo.
+- React.js
+- TypeScript
+- HTML5/CSS3
+- Pathfinding algorithms
+- Modern JavaScript (ES6+)
 
-**Use your preferred IDE**
+## Getting Started
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Prerequisites
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Node.js (v14.0.0 or higher)
+- npm or yarn
 
-Follow these steps:
+### Installation
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/interactive-path-finder-ui.git
+   cd interactive-path-finder-ui
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
+3. Start the development server:
+   ```bash
+   npm start
+   # or
+   yarn start
+   ```
+4. Open your browser and visit
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+##Usage
 
-# Step 3: Install the necessary dependencies.
-npm i
+- Click on the map to set a starting point
+- Click again to set a destination
+- Select a pathfinding algorithm from the dropdown menu
+- Click "Find Path" to visualize the route
+- Use the controls to adjust speed, add obstacles, or clear the map
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+##Algorithms Implemented
+
+### Dijkstra's Algorithm
+Guarantees the shortest path by exploring all possible routes from the starting point.
+
+### A* (A-Star)
+An extension of Dijkstra's algorithm that uses heuristics to guide the search toward the goal, typically resulting in faster pathfinding.
+
+### Breadth-First Search (BFS)
+Explores all neighbor nodes at the present depth before moving to nodes at the next depth level.
+
+### Depth-First Search (DFS)
+Explores as far as possible along each branch before backtracking.
+
+##Project Structure
+```bash
+interactive-path-finder-ui/
+├── public/
+├── src/
+│   ├── components/
+│   ├── hooks/
+│   ├── lib/
+│   ├── models/
+│   ├── pages/
+│   ├── utils/
+│   ├── App.css
+│   ├── App.tsx
+│   ├── index.css
+│   └── main.tsx            
+├── components.json              # Components configuration
+├── eslint.config.js             # ESLint configuration
+├── index.html                   # HTML entry point          
+├── package.json                 # Project dependencies and scripts
+├── postcss.config.js            # PostCSS configuration
+├── README.md                    # Project documentation
+├── tailwind.config.ts           # Tailwind CSS configuration
+├── tsconfig.app.json            # TypeScript app configuration
+├── tsconfig.json                # TypeScript configuration
+├── tsconfig.node.json           # TypeScript Node configuration
+└── vite.config.ts  
 ```
 
-**Edit a file directly in GitHub**
+## Contributing
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. Fork the project
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch 
+5. Open a Pull Request
 
-**Use GitHub Codespaces**
+## Acknowledgments
+- React.js for the frontend framework
+- TypeScript for type safety
+- All contributors who have helped with code, suggestions, and bug reports
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/6301c625-c21e-42d9-8508-d2bd2f8e0752) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes it is!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Contact
+Your Name - @rajveerkhanduja - rajveerkhanduja74@gmail.com
+Project Link: https://github.com/SurajMandal14/interactive-path-finder-ui
