@@ -100,12 +100,13 @@ function dijkstraGrid(graph: any, startCell: string, endCell: string) {
       const cellKey = `${row},${col}`;
       const isStart = row === startRow && col === startCol;
       
-      // Skip obstacles
-      if (graph.grid[row][col] === -1) continue;
-      
-      distances[cellKey] = isStart ? 0 : Infinity;
-      previous[cellKey] = null;
-      unvisited.add(cellKey);
+      // Only include roads (type 1 or greater) and the start/end cells
+      const cellType = graph.grid[row][col];
+      if (cellType >= 1 || (row === startRow && col === startCol) || (row === endRow && col === endCol)) {
+        distances[cellKey] = isStart ? 0 : Infinity;
+        previous[cellKey] = null;
+        unvisited.add(cellKey);
+      }
     }
   }
   
@@ -282,19 +283,20 @@ function aStarGrid(graph: any, startCell: string, endCell: string) {
       const cellKey = `${row},${col}`;
       const isStart = row === startRow && col === startCol;
       
-      // Skip obstacles
-      if (graph.grid[row][col] === -1) continue;
-      
-      gScore[cellKey] = isStart ? 0 : Infinity;
-      
-      // For start cell, calculate heuristic
-      if (isStart) {
-        fScore[cellKey] = gridHeuristic({ row, col }, endPosition);
-      } else {
-        fScore[cellKey] = Infinity;
+      // Only include roads (type 1 or greater) and the start/end cells
+      const cellType = graph.grid[row][col];
+      if (cellType >= 1 || (row === startRow && col === startCol) || (row === endRow && col === endCol)) {
+        gScore[cellKey] = isStart ? 0 : Infinity;
+        
+        // For start cell, calculate heuristic
+        if (isStart) {
+          fScore[cellKey] = gridHeuristic({ row, col }, endPosition);
+        } else {
+          fScore[cellKey] = Infinity;
+        }
+        
+        previous[cellKey] = null;
       }
-      
-      previous[cellKey] = null;
     }
   }
   

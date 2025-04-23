@@ -68,6 +68,9 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
     pathIndex: 0
   });
   
+  // Add a state to track if animation has completed
+  const [animationCompleted, setAnimationCompleted] = useState(false);
+  
   useEffect(() => {
     // Reset animation when pathResult changes
     if (pathResult) {
@@ -87,6 +90,9 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
   // Run the path animation
   useEffect(() => {
     if (!pathResult || !isAnimating) return;
+    
+    // Reset animation completed state when starting a new animation
+    setAnimationCompleted(false);
     
     // Clear any existing animation
     if (animationTimer) {
@@ -114,6 +120,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
         // Animation complete
         else {
           setIsAnimating(false);
+          setAnimationCompleted(true); // Mark animation as completed
           toast.success(`Route found! Total cost: ${pathResult.distance.toFixed(2)}`);
           return prev;
         }
@@ -269,15 +276,20 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
       return '#ff3333'; // Agent - bright red
     }
     
-    // Check if cell is in the final path
-    if (pathResult && isAnimating) {
-      const pathCells = pathResult.path.slice(0, animationState.pathIndex + 1);
+    // Check if cell is in the final path - keep highlighted after animation completes
+    if (pathResult && (isAnimating || animationCompleted)) {
+      // For completed animation, show the entire path
+      const pathIndex = animationCompleted ? pathResult.path.length - 1 : animationState.pathIndex;
+      const pathCells = pathResult.path.slice(0, pathIndex + 1);
+      
       if (pathCells.includes(`${row},${col}`)) {
         return '#ff3333'; // Path - red
       }
       
-      // Check if cell is visited
-      const visitedCells = pathResult.visited.slice(0, animationState.visitedIndex);
+      // For visited cells, show all if animation completed
+      const visitedIndex = animationCompleted ? pathResult.visited.length : animationState.visitedIndex;
+      const visitedCells = pathResult.visited.slice(0, visitedIndex);
+      
       if (visitedCells.includes(`${row},${col}`)) {
         return '#ff9933'; // Visited - orange
       }
@@ -344,11 +356,15 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
       return '#ff3333';
     }
     
-    if (!pathResult || !isAnimating) return '#3388ff';
+    if (!pathResult || (!isAnimating && !animationCompleted)) return '#3388ff';
     
     const { visited, path } = pathResult;
-    const visitedNodes = visited.slice(0, animationState.visitedIndex);
-    const animatedPath = path.slice(0, animationState.pathIndex + 1);
+    // For completed animation, show the entire path and visited nodes
+    const visitedIndex = animationCompleted ? visited.length : animationState.visitedIndex;
+    const pathIndex = animationCompleted ? path.length - 1 : animationState.pathIndex;
+    
+    const visitedNodes = visited.slice(0, visitedIndex);
+    const animatedPath = path.slice(0, pathIndex + 1);
     
     // Start node
     if (path.length > 0 && nodeId === path[0]) {
@@ -429,21 +445,67 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
     if (agentPosition) {
       const agentCoords = graph.gridToCoord(agentPosition.row, agentPosition.col);
       
-      // Simple car representation (can be replaced with a better SVG icon)
+      // Car SVG representation
       gridContent.push(
         <g 
           key="agent" 
           transform={`translate(${agentCoords.x}, ${agentCoords.y})`}
         >
-          <circle
-            r={cellSize / 4}
+          {/* Car body */}
+          <rect
+            x={-cellSize/3}
+            y={-cellSize/4}
+            width={cellSize/1.5}
+            height={cellSize/2}
+            rx={cellSize/10}
             fill="#ff0000"
             stroke="#000"
             strokeWidth="1"
           />
-          <polygon
-            points={`0,-${cellSize/6} ${cellSize/6},${cellSize/6} -${cellSize/6},${cellSize/6}`}
-            fill="#ffffff"
+          {/* Car roof */}
+          <rect
+            x={-cellSize/5}
+            y={-cellSize/4}
+            width={cellSize/2.5}
+            height={cellSize/5}
+            rx={cellSize/20}
+            fill="#880000"
+            stroke="#000"
+            strokeWidth="1"
+          />
+          {/* Wheels */}
+          <circle
+            cx={-cellSize/5}
+            cy={cellSize/6}
+            r={cellSize/10}
+            fill="#333"
+            stroke="#000"
+            strokeWidth="1"
+          />
+          <circle
+            cx={cellSize/5}
+            cy={cellSize/6}
+            r={cellSize/10}
+            fill="#333"
+            stroke="#000"
+            strokeWidth="1"
+          />
+          {/* Headlights */}
+          <circle
+            cx={cellSize/3}
+            cy={-cellSize/8}
+            r={cellSize/20}
+            fill="#ffff00"
+            stroke="#000"
+            strokeWidth="0.5"
+          />
+          <circle
+            cx={cellSize/3}
+            cy={cellSize/8}
+            r={cellSize/20}
+            fill="#ffff00"
+            stroke="#000"
+            strokeWidth="0.5"
           />
         </g>
       );
@@ -645,3 +707,58 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
 };
 
 export default GraphCanvas;
+
+// Remove these lines that are causing the error
+// In your rendering function for grid mode
+// Draw visited cells
+// ctx.fillStyle = 'rgba(173, 216, 230, 0.5)'; // Light blue
+// for (let row = 0; row < gridSize; row++) {
+//   for (let col = 0; col < gridSize; col++) {
+//     if (graph.isVisitedCell(row, col)) {
+//       const { x, y } = graph.gridToCoord(row, col);
+//       ctx.fillRect(
+//         x - cellSize / 2, 
+//         y - cellSize / 2, 
+//         cellSize, 
+//         cellSize
+//       );
+//     }
+//   }
+// }
+
+// // Draw the final path
+// if (graph.isPathHighlighted) {
+//   ctx.strokeStyle = '#FF4500'; // Orange-red
+//   ctx.lineWidth = 4;
+//   
+//   // Draw path between cells
+//   for (let i = 0; i < graph.finalPath.length - 1; i++) {
+//     const [row1, col1] = graph.finalPath[i].split(',').map(Number);
+//     const [row2, col2] = graph.finalPath[i + 1].split(',').map(Number);
+//     
+//     const { x: x1, y: y1 } = graph.gridToCoord(row1, col1);
+//     const { x: x2, y: y2 } = graph.gridToCoord(row2, col2);
+//     
+//     ctx.beginPath();
+//     ctx.moveTo(x1, y1);
+//     ctx.lineTo(x2, y2);
+//     ctx.stroke();
+//     
+//     // Draw circles at each path point
+//     ctx.fillStyle = '#FF4500';
+//     ctx.beginPath();
+//     ctx.arc(x1, y1, cellSize / 6, 0, Math.PI * 2);
+//     ctx.fill();
+//   }
+//   
+//   // Draw the last point
+//   if (graph.finalPath.length > 0) {
+//     const lastCell = graph.finalPath[graph.finalPath.length - 1];
+//     const [lastRow, lastCol] = lastCell.split(',').map(Number);
+//     const { x, y } = graph.gridToCoord(lastRow, lastCol);
+//     
+//     ctx.beginPath();
+//     ctx.arc(x, y, cellSize / 6, 0, Math.PI * 2);
+//     ctx.fill();
+//   }
+// }

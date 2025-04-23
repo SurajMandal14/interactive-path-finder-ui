@@ -18,7 +18,8 @@ import {
   Square,
   Ban,
   Weight,
-  Trash2
+  Trash2,
+  Shuffle
 } from 'lucide-react';
 
 const ControlPanel = ({
@@ -35,7 +36,8 @@ const ControlPanel = ({
   isGridMode,
   setIsGridMode,
   gridSize,
-  setGridSize
+  setGridSize,
+  generateRandomGrid
 }) => {
   const [activeTab, setActiveTab] = useState('tools');
   
@@ -97,6 +99,12 @@ const ControlPanel = ({
     toast.info(`Grid size set to ${size}x${size}`);
   };
 
+  const handleRandomGrid = () => {
+    resetGraph();
+    generateRandomGrid();
+    toast.success('Random grid generated');
+  };
+  
   return (
     <Card className="w-full h-full overflow-auto">
       <CardHeader className="pb-3">
@@ -137,48 +145,58 @@ const ControlPanel = ({
             <div className="flex flex-col gap-3">
               {isGridMode ? (
                 // Grid mode tools
-                <div className="grid grid-cols-3 gap-2">
-                  <Button 
-                    variant={mode === 'add-road' ? 'default' : 'outline'} 
-                    onClick={() => handleToolSelect('add-road')}
-                    className="flex-col py-6 h-auto"
-                  >
-                    <Square className="h-6 w-6 mb-1" />
-                    <div className="text-xs">Add Road</div>
-                  </Button>
-                  <Button 
-                    variant={mode === 'add-obstacle' ? 'default' : 'outline'} 
-                    onClick={() => handleToolSelect('add-obstacle')}
-                    className="flex-col py-6 h-auto"
-                  >
-                    <Ban className="h-6 w-6 mb-1" />
-                    <div className="text-xs">Add Obstacle</div>
-                  </Button>
-                  <Button 
-                    variant={mode === 'add-weight' ? 'default' : 'outline'} 
-                    onClick={() => handleToolSelect('add-weight')}
-                    className="flex-col py-6 h-auto"
-                  >
-                    <Weight className="h-6 w-6 mb-1" />
-                    <div className="text-xs">Add Weight</div>
-                  </Button>
-                  <Button 
-                    variant={mode === 'select' ? 'default' : 'outline'} 
-                    onClick={() => handleToolSelect('select')}
-                    className="flex-col py-6 h-auto"
-                  >
-                    <MousePointer className="h-6 w-6 mb-1" />
-                    <div className="text-xs">Select Start/End</div>
-                  </Button>
-                  <Button 
-                    variant={mode === 'clear' ? 'default' : 'outline'} 
-                    onClick={() => handleToolSelect('clear')}
-                    className="flex-col py-6 h-auto"
-                  >
-                    <Trash2 className="h-6 w-6 mb-1" />
-                    <div className="text-xs">Clear Cell</div>
-                  </Button>
-                </div>
+                <>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button 
+                      variant={mode === 'add-road' ? 'default' : 'outline'} 
+                      onClick={() => handleToolSelect('add-road')}
+                      className="flex-col py-6 h-auto"
+                    >
+                      <Square className="h-6 w-6 mb-1" />
+                      <div className="text-xs">Add Road</div>
+                    </Button>
+                    <Button 
+                      variant={mode === 'add-obstacle' ? 'default' : 'outline'} 
+                      onClick={() => handleToolSelect('add-obstacle')}
+                      className="flex-col py-6 h-auto"
+                    >
+                      <Ban className="h-6 w-6 mb-1" />
+                      <div className="text-xs">Add Obstacle</div>
+                    </Button>
+                    <Button 
+                      variant={mode === 'add-weight' ? 'default' : 'outline'} 
+                      onClick={() => handleToolSelect('add-weight')}
+                      className="flex-col py-6 h-auto"
+                    >
+                      <Weight className="h-6 w-6 mb-1" />
+                      <div className="text-xs">Add Weight</div>
+                    </Button>
+                    <Button 
+                      variant={mode === 'select' ? 'default' : 'outline'} 
+                      onClick={() => handleToolSelect('select')}
+                      className="flex-col py-6 h-auto"
+                    >
+                      <MousePointer className="h-6 w-6 mb-1" />
+                      <div className="text-xs">Select Start/End</div>
+                    </Button>
+                    <Button 
+                      variant={mode === 'clear' ? 'default' : 'outline'} 
+                      onClick={() => handleToolSelect('clear')}
+                      className="flex-col py-6 h-auto"
+                    >
+                      <Trash2 className="h-6 w-6 mb-1" />
+                      <div className="text-xs">Clear Cell</div>
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={handleRandomGrid}
+                      className="flex-col py-6 h-auto"
+                    >
+                      <Shuffle className="h-6 w-6 mb-1" />
+                      <div className="text-xs">Random Grid</div>
+                    </Button>
+                  </div>
+                </>
               ) : (
                 // Graph mode tools
                 <div className="grid grid-cols-3 gap-2">
